@@ -4,6 +4,11 @@
 		environment values as run-time constant         
 		subroutines.                                    
 
+0.11	Tuesday March 24, 2009, 04:30:00 AM -0700
+
+	* lib/Env/Export.pm
+	Fixed typo in the documentation.                                
+
 0.10	Tuesday March 24, 2009, 03:45:00 AM -0700
 
 	* lib/Env/Export.pm
@@ -13,7 +18,7 @@
 	* t/10_basic.t
 	Initial draft of the very basic functionality.                  
 
-# Generated on Tuesday March 24, 2009, 04:18:31 AM -0700
+# Generated on Tuesday March 24, 2009, 04:32:51 AM -0700
 # Using changelog2x/0.10, App::Changelog2x/0.10, XML::LibXML/1.69,             
 # XML::LibXSLT/1.68, libxml/2.6.32, libxslt/1.1.24 (with exslt)                
 # XSLT sources:

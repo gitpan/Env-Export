@@ -1,6 +1,6 @@
 ---
 name: Env-Export
-version: 0.10
+version: 0.11
 author:
   - 'Randy J. Ray <rjray@blackperl.com>'
 abstract: Automatically export environment variables as constant-subs
@@ -11,8 +11,7 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/rjray/env-export/tree/master
 requires:
-  File::Spec: 0.8
-  perl: 5.006
+  perl: 5.006001
 build_requires:
   Module::Build: 0.28
   Test::More: 0.80
@@ -22,7 +21,7 @@ recommends:
 provides:
   Env::Export:
     file: lib/Env/Export.pm
-    version: 0.10
+    version: 0.11
 generated_by: Module::Build version 0.32
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
