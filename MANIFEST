@@ -1,0 +1,15 @@
+Build.PL
+ChangeLog
+ChangeLog.xml
+etc/ChangeLogML.xsd
+lib/Env/Export.pm
+MANIFEST			This list of files
+MANIFEST.SKIP
+README
+t/00_load.t
+t/01_pod.t
+t/02_pod_coverage.t
+t/10_basic.t
+Makefile.PL
+META.yml
+SIGNATURE    Added here by Module::Build
