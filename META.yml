@@ -1,6 +1,6 @@
 ---
 name: Env-Export
-version: 0.11
+version: 0.12
 author:
   - 'Randy J. Ray <rjray@blackperl.com>'
 abstract: Automatically export environment variables as constant-subs
@@ -21,7 +21,7 @@ recommends:
 provides:
   Env::Export:
     file: lib/Env/Export.pm
-    version: 0.11
+    version: 0.12
 generated_by: Module::Build version 0.32
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

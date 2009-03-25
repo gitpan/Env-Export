@@ -10,6 +10,7 @@ t/00_load.t
 t/01_pod.t
 t/02_pod_coverage.t
 t/10_basic.t
+t/15_no_redefine.t
 Makefile.PL
 META.yml
 SIGNATURE    Added here by Module::Build
