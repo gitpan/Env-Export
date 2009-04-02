@@ -6,6 +6,7 @@ WriteMakefile
           'NAME' => 'Env::Export',
           'VERSION_FROM' => 'lib/Env/Export.pm',
           'PREREQ_PM' => {
+                           'File::Spec' => '3.0',
                            'Module::Build' => '0.28',
                            'Test::More' => '0.80'
                          },
