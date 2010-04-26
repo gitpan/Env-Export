@@ -6,6 +6,7 @@ lib/Env/Export.pm
 MANIFEST			This list of files
 MANIFEST.SKIP
 README
+README.textile
 t/00_load.t
 t/01_pod.t
 t/02_pod_coverage.t
@@ -21,4 +22,3 @@ t/80_split.t
 t/sub_count.pl
 Makefile.PL
 META.yml
-SIGNATURE    Added here by Module::Build

@@ -1,70 +1,71 @@
-Env::Export - Export environment variables as constant subroutines
-==================================================================
+h1. Env::Export - Export environment variables as constant subroutines
 
 Version: 0.21
 
-
-WHAT IS IT
-----------
+h2. WHAT IS IT
 
 This module allows the user to specify one or more environment variables that
 should be "exported" to the calling namespace as constant subroutines. By
 doing this, their existence/inexistence can be detected at compile-time.
 
-
-USING Env::Export
------------------
+h2. USING Env::Export
 
 The difference is in how you detect the absence of the environment variable
 you need:
 
+<pre>
+<code>
     if (exists($ENV{PATH}) and ($ENV{PATH} =~ /.../))
     {
         # Do something
     }
+</code>
+</pre>
 
 versus:
 
+<pre>
+<code>
     use Env::Export 'PATH';
 
     if (PATH =~ /.../)
     {
         # Do something
     }
+</code>
+</pre>
 
 The first form performs two tests, the first to ensure that the second does
 not cause a "Use of unitialized value in regular expression" warning. The
 second form only performs one test, but it also generates a compile-time
 error if there was no environment variable "PATH" present.
 
-
-BUILDING/INSTALLING
--------------------
+h2. BUILDING/INSTALLING
 
 This package provides a Makefile.PL file as is typical of CPAN modules.
 Building and installing is as easy as:
 
+<pre>
+<code>
         perl Makefile.PL
         make
         make test
         # If tests pass
         make install
+</code>
+</pre>
 
 (The "make install" step may require super-user privileges.)
 
-
-PROBLEMS/BUG REPORTS
---------------------
+h2. PROBLEMS/BUG REPORTS
 
 Problems, bug reports, or suggestions for enhancements can be sent to the RT
 instance set up for all CPAN-based distributions:
 
-  http://rt.cpan.org/NoAuth/Bugs.html?Dist=Env-Export
+bq. http://rt.cpan.org/NoAuth/Bugs.html?Dist=Env-Export
 
+h2. CHANGES
 
-CHANGES
--------
+* lib/Env/Export.pm
 
-  * lib/Env/Export.pm
-
-Code clean-up inspired by perlcritic.
+p{margin-bottom:2em}. Code clean-up inspired by perlcritic.
