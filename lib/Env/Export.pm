@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# This file copyright (c) 2009 by Randy J. Ray, all rights reserved
+# This file copyright (c) 2009-2011 by Randy J. Ray, all rights reserved
 #
 # Copying and distribution are permitted under the terms of the Artistic
 # License 2.0 (http://www.opensource.org/licenses/artistic-license-2.0.php) or
@@ -21,11 +21,13 @@ package Env::Export;
 use 5.006001;
 use strict;
 use warnings;
+use vars qw($VERSION);
 use subs qw(import);
 
 use Carp qw(croak carp);
 
-our $VERSION = '0.21';
+$VERSION = '0.22';
+$VERSION = eval $VERSION; ## no critic(ProhibitStringyEval)
 
 ###############################################################################
 #
@@ -61,17 +63,12 @@ sub import ## no critic(ProhibitExcessComplexity)
     }
 
     my ($calling_pkg) = caller;
-    if ((! defined $calling_pkg) || ($calling_pkg eq q{}))
-    {
-        croak "$me: Could not determine caller package";
-    }
     my $callersym = \%{"${calling_pkg}::"};
 
     # Values that are tweaked by keywords that may appear in the @patterns
     # stream:
     my $warn     = 1;
     my $link     = 0;
-    my $mutable  = 0;
     my $prefix   = q{};
     my $override = 0;
     my $split    = q{};
@@ -88,6 +85,16 @@ sub import ## no critic(ProhibitExcessComplexity)
     {
         # This would be a lot cleaner if I could assume the presence of the
         # "switch" statement. But I'm not ready to limit this code to 5.10+
+
+        # Because ":split" only applies to the very next argument after it,
+        # we have to handle it specially. It gets cleared at the end of every
+        # iteration of this loop, so if it is here, peel off the next argument
+        # then re-assign $pat to the one after that.
+        if ($pat eq ':split')
+        {
+            $split = shift @patterns;
+            $pat   = shift @patterns;
+        }
 
         # Do the keywords first, in most cases they just flip flags back and
         # forth
@@ -107,14 +114,6 @@ sub import ## no critic(ProhibitExcessComplexity)
         {
             $link = $1 ? 0 : 1;
         }
-        elsif ($pat =~ /^:(no)?mutable$/)
-        {
-            $mutable = $1 ? 0 : 1;
-        }
-        elsif ($pat eq ':split')
-        {
-            $split = shift @patterns;
-        }
         elsif ($pat eq ':all')
         {
             for (@choices)
@@ -124,32 +123,10 @@ sub import ## no critic(ProhibitExcessComplexity)
                               prefix   => $prefix,
                               override => $override,
                               link     => $link,
-                              mutable  => $mutable,
                               split    => $split, };
             }
         }
         # Now handle explicit names, shell-style patterns and regexen:
-        # First, shell style (* => .*, ? => ., ?* => .+):
-        elsif ($pat =~ /^[A-Za-z_\*\?][\w\*\?]*$/)
-        {
-            # Change the shell-style globbing patterns to regex equivalents
-            $pat =~ s/\?\*/.+/g;
-            $pat =~ s/\*/.*/g;
-            $pat =~ s/\?/./g;
-            $pat = qr/^$pat$/;
-
-            # Add an entry to @subs for each matching key
-            for (grep { $_ =~ $pat } @choices)
-            {
-                push @subs, { key      => $_,
-                              warn     => $warn,
-                              prefix   => $prefix,
-                              override => $override,
-                              link     => $link,
-                              mutable  => $mutable,
-                              split    => $split, };
-            }
-        }
         # Pre-compiled Perl regexen:
         elsif (ref($pat) eq 'Regexp')
         {
@@ -161,7 +138,26 @@ sub import ## no critic(ProhibitExcessComplexity)
                               prefix   => $prefix,
                               override => $override,
                               link     => $link,
-                              mutable  => $mutable,
+                              split    => $split, };
+            }
+        }
+        # Shell style (* => .*, ? => ., ?* => .+):
+        elsif ($pat =~ /[*?]/)
+        {
+            # Change the shell-style globbing patterns to regex equivalents
+            $pat =~ s/[?][*]/.+/g;
+            $pat =~ s/[*]/.*/g;
+            $pat =~ s/[?]/./g;
+            $pat = qr/^$pat$/;
+
+            # Add an entry to @subs for each matching key
+            for (grep { $_ =~ $pat } @choices)
+            {
+                push @subs, { key      => $_,
+                              warn     => $warn,
+                              prefix   => $prefix,
+                              override => $override,
+                              link     => $link,
                               split    => $split, };
             }
         }
@@ -174,7 +170,6 @@ sub import ## no critic(ProhibitExcessComplexity)
                           prefix   => $prefix,
                           override => $override,
                           link     => $link,
-                          mutable  => $mutable,
                           split    => $split, };
         }
         # And if we got here it was almost certainly a pattern that would not
@@ -218,11 +213,15 @@ sub import ## no critic(ProhibitExcessComplexity)
             if ($_->{split})
             {
                 my $localsplit = $_->{split};
-                *{$subname} = sub () { split $localsplit, $ENV{$envkey} };
+                *{$subname} = sub () {
+                    return split $localsplit, $ENV{$envkey};
+                };
             }
             else
             {
-                *{$subname} = sub () { $ENV{$envkey} };
+                *{$subname} = sub () {
+                    return $ENV{$envkey};
+                };
             }
         }
         else
@@ -230,12 +229,16 @@ sub import ## no critic(ProhibitExcessComplexity)
             if ($_->{split})
             {
                 my @value = split $_->{split}, $ENV{$envkey};
-                *{$subname} = sub () { @value };
+                *{$subname} = sub () {
+                    return @value;
+                };
             }
             else
             {
                 my $value = $ENV{$envkey};
-                *{$subname} = sub () { $value };
+                *{$subname} = sub () {
+                    return $value;
+                };
             }
         }
     }
@@ -267,10 +270,11 @@ Env::Export - Export %ENV values as constant subroutines
 
 This module exports the requested environment variables from C<%ENV> as
 constants, represented by subroutines that have the same names as the
-specific environment variables.
+specified environment variables.
 
-Specification of the environment values to export may be by explicit name or
-by regular expression. Any number of names or patterns may be passed in.
+Specification of the environment values to export may be by explicit name,
+shell-style glob pattern or by regular expression. Any number of names or
+patterns may be passed in.
 
 =head1 SUBROUTINES/METHODS
 
@@ -280,7 +284,7 @@ handles the exporting of the requested environment variables.
 =head1 EXPORT
 
 Any environment variable whose name would be a valid Perl identifier (must
-match the pattern C<^[A-Za-z_]\w*$> may be exported this way. No values are
+match the pattern C<^[A-Za-z_]\w*$>) may be exported this way. No values are
 exported by default, all must be explicitly requested. If you request a name
 that does not match the above pattern, a warning is issued and the name is
 removed from the exports list.
@@ -307,7 +311,7 @@ list of parameters:
 
 This would convert all the environment variables that start with the
 characters C<LC_> (the locale/language variables used for character sets,
-encoding, etc.)  to subroutines. You wouldn't have to specify each one
+encoding, etc.) to subroutines. You wouldn't have to specify each one
 separately, or go back and add to the list if/when you added more such
 variables.
 
@@ -360,7 +364,7 @@ shorter version enabling it. The last keyword operates in a different way.
 
 Enable or disable warnings sent by B<Env::Export>. By default, warnings are
 enabled. If the user tries to redefine an existing subroutine, a warning is
-triggered. If warnings are disabled, then it will not be. Note that the
+issued. If warnings are disabled, then it will not be. Note that the
 warning that signals an invalid export pattern cannot be suppressed by this
 keyword. (It can by caught by C<$SIG{__WARN__}>, if you like.)
 
@@ -418,7 +422,7 @@ Several common environment variables act as lists of values separated by a
 common delimiter (usually a colon, C<:>). These include "PATH",
 "LD_LIBRARY_PATH", etc. Since users may want to always treat these values as
 arrays, to save you the trouble of always splitting the elements out each
-time you access the value, the C<:split> keyword allows you to specify the
+time you access the value the C<:split> keyword allows you to specify the
 delimiter that should be applied. The function that gets created will then
 return an array rather than a single element (although the array may have only
 one element, of course). The delimiter may be a constant string or a
@@ -482,20 +486,19 @@ suppressed by the C<no warnings 'redefine'> pragma.
 
 =head1 DIAGNOSTICS
 
-The only fatal condition is when B<import> cannot identify the calling
-package.
+B<Env::Export> only issues warnings, and should not throw any exceptions.
 
 =head1 SEE ALSO
 
-L<constant>, L<perlvar/"Constant Functions">
+L<constant|constant>, L<perlvar/"Constant Functions">
 
 =head1 AUTHOR
 
-Randy J. Ray C<< <rjray@blackperl.com> >>
+Randy J. Ray C<< <rjray at blackperl.com> >>
 
 Original idea from a journal posting by Curtis "Ovid" Poe
 (C<< <ovid at cpan.org> >>), built on a sample implementation done by
-Steffen Mueller, C<< <smueller@cpan.org> >>.
+Steffen Mueller, C<< <smueller at cpan.org> >>.
 
 =head1 BUGS
 
@@ -527,13 +530,13 @@ L<http://search.cpan.org/dist/Env-Export>
 
 =item * Source code on GitHub
 
-L<http://github.com/rjray/env-export/tree/master>
+L<https://github.com/rjray/env-export>
 
 =back
 
 =head1 LICENSE AND COPYRIGHT
 
-This file and the code within are copyright (c) 2009 by Randy J. Ray.
+This file and the code within are copyright (c) 2009-2011 by Randy J. Ray.
 
 Copying and distribution are permitted under the terms of the Artistic
 License 2.0 (L<http://www.opensource.org/licenses/artistic-license-2.0.php>) or
